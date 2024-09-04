@@ -1,21 +1,42 @@
-import { View, Text, SafeAreaView, StatusBar, Image, TouchableOpacity, ImageBackground, StyleSheet } from 'react-native'
+import { View, Text, SafeAreaView, StatusBar, Image, TouchableOpacity, ImageBackground, StyleSheet, LogBox } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import HeaderMusic from '../../components/HeaderMusic';
 import TextTicker from 'react-native-text-ticker';
 import { Svg, Path, G, Rect } from 'react-native-svg';
-import Slider from '@react-native-community/slider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import TrackPlayer,{RepeatMode} from 'react-native-track-player';
+import TrackPlayer,{useProgress, useTrackPlayerEvents, Event, RepeatMode, State} from 'react-native-track-player';
 import { BlurView } from '@react-native-community/blur';
 import { ChangeSelectedOptions } from '../../utils/PlayMusicutils/changeSelectedQueque';
 import { useSelector, useDispatch } from 'react-redux';
-import { setSelectedQueQue} from '../../redux/slices/audioSlice';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { setPlayMusic, setSelectedQueQue, setStopPlayMusic} from '../../redux/slices/audioSlice';
+import { useRoute } from '@react-navigation/native';
+import { updateTrackInfo } from '../../utils/PlayMusicutils/TrackUtils';
+import {
+    selectTrackTitle,
+    selectTrackArtist,
+    selectTrackArtwork,
+    selectTrackDuration,
+    selectTrackAlbum,
+} from '../../redux/slices/trackSlice';
+import MusicControl, { Command } from 'react-native-music-control';
+import { saveImageToAppFolder } from '../../utils/getImagesMusic';
+import { Slider } from '@miblanchard/react-native-slider';
 
 const PlayMusicScreen = () => {
-    const [isPlaying, setIsPlaying] = useState();
-    const selectedQueque = useSelector((state) => state.audio.selectedQueQue);
+    const [HasSliding, setHasSliding] = useState(false);
+    const [position, setPosition] = useState(0);
+
     const dispatch = useDispatch();
+    const progress = useProgress();
+    
+    // mendapatkan track now playing
+    const selectedQueque = useSelector((state) => state.audio.selectedQueQue);
+    const title = useSelector(selectTrackTitle);
+    const artist = useSelector(selectTrackArtist);
+    const artwork = useSelector(selectTrackArtwork);
+    const album = useSelector(selectTrackAlbum);
+    const shuffledArray = useSelector((state) => state.audio.shuffledArray);
+    const isPlaying = useSelector((state) => state.audio.playMusic);
 
     // mendapatkan id music
     const route = useRoute();
@@ -24,20 +45,19 @@ const PlayMusicScreen = () => {
     useEffect(() => {
         const skipMusic = async () => {
             try {
-                console.log(" data : ", receivedMusicId);
                 
                 if (receivedMusicId == 999999) {
                     const state = await TrackPlayer.getState();
                     if (state === State.Playing) {
-                        // MusicControl.updatePlayback({
-                        //     state: MusicControl.STATE_PLAYING,
-                        // });
-                        setIsPlaying(true);
+                        MusicControl.updatePlayback({
+                            state: MusicControl.STATE_PLAYING,
+                        });
+                        dispatch(setPlayMusic());
                     }else if(state === State.Paused) {
-                        // MusicControl.updatePlayback({
-                        //     state: MusicControl.STATE_PAUSED,
-                        // });
-                        setIsPlaying(false);
+                        MusicControl.updatePlayback({
+                            state: MusicControl.STATE_PAUSED,
+                        });
+                        dispatch(setStopPlayMusic());
                     }
                 }else {
                     const musicId = parseInt(receivedMusicId, 10);
@@ -45,10 +65,10 @@ const PlayMusicScreen = () => {
                     
                     await TrackPlayer.skip(musicId);
                     await TrackPlayer.play();
-                    // MusicControl.updatePlayback({
-                    //     state: MusicControl.STATE_PLAYING,
-                    // });
-                    setIsPlaying(true);
+                    MusicControl.updatePlayback({
+                        state: MusicControl.STATE_PLAYING,
+                    });
+                    dispatch(setPlayMusic());
                 }
             } catch (error) {
                 console.log("error : ", error);
@@ -58,7 +78,73 @@ const PlayMusicScreen = () => {
 
         GetQueQueMusic();
         skipMusic();
-        // updateTrackInfo();
+        updateTrackInfo(dispatch, showNotification);
+    }, []);
+
+    useEffect(() => {
+        if (!HasSliding) {
+            // Set nilai position ke nilai progress terbaru
+            setPosition(progress.position);
+        }
+    }, [progress.position]);
+
+    useEffect(() => {
+        const updateNotificationPlayback = () => {
+            MusicControl.updatePlayback({
+                elapsedTime: progress.position,
+            });
+        };
+        updateNotificationPlayback();
+    }, [progress.position, progress.duration]);
+
+    useEffect(() => {
+        async function checkTrackPlayerShuffleEnd() {
+            const getvalue = await AsyncStorage.getItem('QueQueSelected');
+            const selectedvalue = parseInt(getvalue, 10);
+
+            if (selectedvalue == 2) {
+                if (progress.duration && progress.position) {
+                    const remainingTime = progress.duration - progress.position;
+                    if (remainingTime <= 2) {
+                        handleNextPress();
+                    }
+                }
+            }
+        }
+        checkTrackPlayerShuffleEnd();
+    }, [progress.position]);
+    
+    const showNotification = async (title, artist, duration, artwork, album) => {
+        try {
+            if(artwork !== 'content://media/external/audio/albumart/1') {
+                try {
+                    await saveImageToAppFolder(artwork);
+                } catch (error) {
+                    console.log(error);
+                }
+            }
+            const defaultImages = artwork === 'content://media/external/audio/albumart/1' ? require('../../assets/images/DefaultMusic.png') : 'file:///storage/emulated/0/Android/data/com.hiyorirhythm/files/MyAppImages/profile_image.jpg';
+            MusicControl.setNowPlaying({
+                title: title,
+                artwork: defaultImages, // Path ke album art
+                artist: artist === "<unknown>" ? "Unknown Artist" : artist,
+                album: album,
+                genre: 'Post-disco, Rhythm and Blues, Funk, Dance-pop',
+                duration: duration, // (Seconds)
+                description: '', // Android Only
+                colorized: true,
+                notificationIcon: 'my_custom_icon', // Android Only (String), Android Drawable resource name for a custom notification icon
+            });
+        } catch (error) {
+            console.log('Error displaying music notification:', error);
+        }
+    };
+
+    useEffect(()=> {
+        MusicControl.on(Command.play, async () => handlePlay());
+        MusicControl.on(Command.pause, async () => handlePause());
+        MusicControl.on(Command.nextTrack, async () => handleNextPress());
+        MusicControl.on(Command.previousTrack, async () => handlePrevPress());
     }, []);
 
     const GetQueQueMusic = async () => {
@@ -70,62 +156,159 @@ const PlayMusicScreen = () => {
         dispatch(setSelectedQueQue(selectedvalue));
     }
 
+    const onSlidingComplete = async (value) => {
+        await TrackPlayer.seekTo(value);
+    };
+
+    const formatTime = (seconds) => {
+        const roundedSeconds = Math.floor(seconds);
+        const hours = Math.floor(roundedSeconds / 3600);
+        const minutes = Math.floor((roundedSeconds % 3600) / 60);
+        const remainingSeconds = roundedSeconds % 60;
     
+        return hours > 0 
+            ? `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`
+            : `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+    };
+
+    useTrackPlayerEvents([Event.PlaybackQueueEnded], async(event) => {
+        await TrackPlayer.skip(0);
+    });
+
+    useTrackPlayerEvents([Event.PlaybackTrackChanged], async (event) => {
+        updateTrackInfo(dispatch, showNotification);
+    });
+
+    const handlePause = async () => {
+        await TrackPlayer.pause();
+        dispatch(setStopPlayMusic());
+        MusicControl.updatePlayback({
+            state: MusicControl.STATE_PAUSED,
+        });
+    }
+
+    const handlePlay = async () => {
+        await TrackPlayer.play();
+        dispatch(setPlayMusic());
+        // Perbarui ikon di notifikasi saat tombol play diklik
+        MusicControl.updatePlayback({
+            state: MusicControl.STATE_PLAYING,
+        });
+    };
+
+    const handleNextPress = async () => {
+        const getvalue = await AsyncStorage.getItem('QueQueSelected');
+        const selectedvalue = parseInt(getvalue, 10);
+        if (selectedvalue === 1) {
+            await TrackPlayer.skipToNext();
+        }else if(selectedvalue === 2) {
+            const currentIndex = await TrackPlayer.getCurrentTrack(); // Dapatkan ID dari lagu yang sedang diputar
+            const currentId = shuffledArray.indexOf(currentIndex); // Cari indeks dari ID saat ini di shuffledArray
+
+            let nextIndex = currentId + 1;
+            if (nextIndex >= shuffledArray.length) {
+                nextIndex = 0; // Kembali ke awal array jika sudah mencapai akhir
+            }
+
+            await TrackPlayer.skip(shuffledArray[nextIndex]);
+        }else if(selectedvalue === 3) {
+            await TrackPlayer.skipToNext();
+        }
+        await TrackPlayer.play();
+        dispatch(setPlayMusic());
+        MusicControl.updatePlayback({
+            state: MusicControl.STATE_PLAYING,
+        });
+        updateTrackInfo(dispatch, showNotification);
+    };
+
+    const handlePrevPress = async () => {
+        const getvalue = await AsyncStorage.getItem('QueQueSelected');
+        const selectedvalue = parseInt(getvalue, 10);
+        if (selectedvalue === 1) {
+            await TrackPlayer.skipToPrevious();
+
+        }else if(selectedvalue === 2) {
+            const currentIndex = await TrackPlayer.getCurrentTrack();
+            const currentId = shuffledArray.indexOf(currentIndex);
+        
+            // Tentukan indeks track sebelumnya
+            let previousIndex = currentId - 1;
+            if (previousIndex < 0) {
+                previousIndex = shuffledArray.length - 1; // Kembali ke akhir array jika sudah mencapai awal
+            }
+
+            await TrackPlayer.skip(shuffledArray[previousIndex]);
+        }else if(selectedvalue === 3) {
+            await TrackPlayer.skipToPrevious();
+        }
+        await TrackPlayer.play();
+        dispatch(setPlayMusic());
+        MusicControl.updatePlayback({
+            state: MusicControl.STATE_PLAYING,
+        });
+        updateTrackInfo(dispatch, showNotification);
+    };
 
     return (
         <SafeAreaView style={{flex: 1, backgroundColor: '#0d0d0d'}}>
             <StatusBar backgroundColor="transparent" translucent />
-            <HeaderMusic />
-            <ImageBackground style={[styles.containerStyle, styles.blur]} source={require('../../assets/images/test.jpg')}>
+            <HeaderMusic album={album} />
+            <ImageBackground style={[styles.containerStyle, styles.blur]} source={artwork === "content://media/external/audio/albumart/1" ? require('../../assets/images/DefaultMusic.png') : {uri: artwork}}>
                 <BlurView
                 style={{position: 'absolute', height: '100%', width: '100%', top: 0}}
                 blurType="dark"
                 blurAmount={100}
                 reducedTransparencyFallbackColor="white"
                 />
+                <>
                 <View style={{height: '57%', width: '100%', justifyContent: 'center', alignItems: 'center', paddingTop: 80}}>
-                    <Image source={require('../../assets/images/test.jpg')} style={{height: '80%', width: "75%", borderRadius: 20, resizeMode: 'cover'}}/>
+                    {artwork && artwork !== 'content://media/external/audio/albumart/1' ? (
+                        <Image source={{uri: artwork}} style={{height: '80%', width: "75%", borderRadius: 20, resizeMode: 'cover'}}/>
+                    ) : (
+                        <Image source={require('../../assets/images/DefaultMusic.png')} style={{height: '80%', width: "75%", borderRadius: 20, resizeMode: 'cover'}}/>
+                    )}    
                 </View>
                 <View style={{flex: 1, width: '100%'}}>
-                    <View style={{width: '100%', justifyContent: 'flex-start', alignItems: 'center',paddingHorizontal: 5}}>
+                    <View style={{width: '100%', justifyContent: 'flex-start', alignItems: 'center', paddingHorizontal: 5}}>
                         <TextTicker
-                            style={{ fontFamily: 'Roboto-Bold', fontSize: 20, color: '#Fdfdfd'}}
-                            duration={7000} // Durasi pergerakan teks
-                            loop // Mengulangi animasi
-                            bounce // Memberikan efek pantulan
-                            repeatSpacer={150} // Jarak kembali ke awal
-                            marqueeDelay={3000} // Jeda sebelum animasi dimulai
+                            style={{ fontFamily: 'Roboto-Bold', fontSize: 18, color: '#Fdfdfd', justifyContent: 'center', alignItems: 'center'}}
+                            duration={5000} // Durasi pergerakan teks
+                            loop ={true} // Mengulangi animasi
+                            bounce={true} // Memberikan efek pantulan
+                            repeatSpacer={200} // Jarak kembali ke awal
+                            marqueeDelay={1000} // Jeda sebelum animasi dimulai
                             scroll
                         >
-                            Zoe Wees Control Lyric Lyrics Video
+                            {title}
                         </TextTicker>
-                        <Text numberOfLines={1} style={{fontFamily: 'Roboto-SemiBold', fontSize: 16, color: '#cdcdcd', marginTop: 16}}>Ariana Grande</Text>
+                        <Text numberOfLines={1} style={{fontFamily: 'Roboto-SemiBold', fontSize: 16, color: '#cdcdcd', marginTop: 16}}>{artist === "<unknown>" ? "Unknown Artist" : artist}</Text>
                     </View>
                     <View style={{height: 60, marginTop: 15}}>
                         <View style={{flex: 1}}>
-                            <View style={{flex: 1, justifyContent: 'center'}}>
+                            <View style={{flex: 1, justifyContent: 'center', paddingHorizontal: 15}}>
                                 <Slider
                                     style={{ width: '100%'}}
                                     minimumValue={0}
-                                    maximumValue={20}
-                                    value={6}
-                                    // onValueChange={(value) => onValueChange(Number(value))}
-                                    // onSlidingStart={(value) => setHasSliding(true)}
-                                    // onSlidingComplete={(value) => {
-                                    //     setHasSliding(false);
-                                    //     onSlidingComplete(Number(value));
-                                    // }}
+                                    maximumValue={progress.duration}
+                                    value={position}
+                                    onValueChange={(value) => setPosition(Number(value))}
+                                    onSlidingStart={(value) => setHasSliding(true)}
+                                    onSlidingComplete={(value) => {
+                                        setHasSliding(false);
+                                        onSlidingComplete(Number(value));
+                                    }}
                                     thumbTintColor='#FFFFFF'
                                     minimumTrackTintColor='#F2F2F2'
                                     maximumTrackTintColor='#808080'
-                                    // trackStyle={HasSliding ? {height: 2.5, borderRadius: 50, borderWidth: 6, borderColor: 'rgba(58,58,58,0.5)'} : {height: 2.5, borderRadius: 50}}
-                                    // thumbStyle={HasSliding ? {height: 14, width: 14} : {height: 12, width: 12}}
+                                    trackStyle={HasSliding ? {height: 2.5, borderRadius: 50, borderWidth: 6, borderColor: 'rgba(58,58,58,0.5)'} : {height: 2.5, borderRadius: 50}}
+                                    thumbStyle={HasSliding ? {height: 14, width: 14} : {height: 12, width: 12}}
                                 />
                             </View>
                         </View>
                         <View style={{flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 20}}>
-                            <Text>0:29</Text>
-                            <Text>3:54</Text>
+                            <Text style={{fontFamily: 'Montserrat-Medium', fontSize: 13, color: '#fdfdfd'}}>{formatTime(position)}</Text>
+                            <Text style={{fontFamily: 'Montserrat-Medium', fontSize: 13, color: '#fdfdfd'}}>{formatTime(progress.duration)}</Text>
                         </View>
                     </View>
                     <View style={{height: 40}}>
@@ -145,8 +328,6 @@ const PlayMusicScreen = () => {
                     <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 20, }}>
                         <View style={{flex:1, alignItems: 'center', justifyContent: 'center'}}>
                             <TouchableOpacity onPress={() => ChangeSelectedOptions(dispatch)}>
-                                {/* tempat buat shuffle repeat or nexxt */}
-                                {/* <Image source={selected} style={{height: selectedOption === 1 ? 24 : 26, width: selectedOption === 1 ? 24 : 26}} /> */}
                                 {selectedQueque == 1 ? (
                                     <Svg fill="#fdfdfd" width="34px" height="34px" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
                                         <G fill-rule="evenodd">
@@ -176,8 +357,7 @@ const PlayMusicScreen = () => {
                         </View>
                         <View style={{flex:1, borderColor: 'black', alignItems: 'center', justifyContent: 'center'}}>
                             <View>
-                                {/* onPress={handlePrevPress} */}
-                                <TouchableOpacity>
+                                <TouchableOpacity onPress={handlePrevPress}>
                                     <Svg height="22" width="22" viewBox="0 0 51.531 51.531" style={{transform: [{rotate: '180deg'}]}}>
                                         <Path fill="#F5F5F5" d="M44.9,1.963c-3.662,0-6.631,2.969-6.631,6.631V23.81c-0.285-0.324-0.617-0.609-1-0.831L6,4.926
                                         c-1.238-0.715-2.762-0.715-4,0C0.763,5.64,0,6.961,0,8.39v36.104c0,1.43,0.763,2.75,2,3.465c0.619,0.356,1.311,0.535,2,0.535
@@ -190,15 +370,13 @@ const PlayMusicScreen = () => {
                         <View style={{flex:1, borderColor: 'black', alignItems: 'center', justifyContent: 'center'}}>
                         {isPlaying ? (
                             <View>
-                                {/* onPress={handlePause} */}
-                                <TouchableOpacity>
+                                <TouchableOpacity onPress={handlePause}>
                                     <Svg xmlns="http://www.w3.org/2000/svg" height="80" viewBox="0 -960 960 960" width="80" fill="#F5F5F5"><Path d="M360-320h80v-320h-80v320Zm160 0h80v-320h-80v320ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></Svg>
                                 </TouchableOpacity>
                             </View>
                         ) : (
                             <View>
-                                {/* onPress={handlePlay} */}
-                                <TouchableOpacity >
+                                <TouchableOpacity onPress={handlePlay} >
                                     <Svg xmlns="http://www.w3.org/2000/svg" height="80" viewBox="0 -960 960 960" width="80" fill="#F5F5F5"><Path d="m380-300 280-180-280-180v360ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></Svg>
                                 </TouchableOpacity>
                             </View>
@@ -206,8 +384,7 @@ const PlayMusicScreen = () => {
                         </View>
                         <View style={{flex:1, borderColor: 'black', alignItems: 'center', justifyContent: 'center'}}>
                             <View>
-                                {/* onPress={handleNextPress} */}
-                                <TouchableOpacity>
+                                <TouchableOpacity onPress={handleNextPress}>
                                     <Svg height="22" width="22" viewBox="0 0 51.531 51.531">
                                         <Path fill="#F5F5F5" d="M44.9,1.963c-3.662,0-6.631,2.969-6.631,6.631V23.81c-0.285-0.324-0.617-0.609-1-0.831L6,4.926
                                         c-1.238-0.715-2.762-0.715-4,0C0.763,5.64,0,6.961,0,8.39v36.104c0,1.43,0.763,2.75,2,3.465c0.619,0.356,1.311,0.535,2,0.535
@@ -224,6 +401,7 @@ const PlayMusicScreen = () => {
                         </View>
                     </View>
                 </View>
+                </>
             </ImageBackground>
         </SafeAreaView>
     );

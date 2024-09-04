@@ -4,7 +4,7 @@ import { View, TouchableWithoutFeedback, Text } from "react-native";
 import { Svg, Path } from "react-native-svg";
 
 
-const HeaderMusic = () => {
+const HeaderMusic = ({album}) => {
     const navigation = useNavigation();
 
     return (
@@ -19,7 +19,7 @@ const HeaderMusic = () => {
                 </View>
                 <View style={{flex: 1, alignItems: 'center', justifyContent: 'flex-end'}}>
                     <View style={{ flexDirection: 'row', gap: 10, justifyContent: "center", alignItems: "center"}}>
-                        <Text numberOfLines={1} ellipsizeMode="tail" style={{fontFamily: 'Montserrat-SemiBold', fontSize: 18, color: '#ffffff'}}>Music</Text>
+                        <Text numberOfLines={1} ellipsizeMode="tail" style={{fontFamily: 'Montserrat-SemiBold', fontSize: 18, color: '#ffffff'}}>{album}</Text>
                     </View>
                 </View>
                 <View style={{flex: 1, alignItems: 'flex-end', justifyContent: 'flex-end'}}>

@@ -11,6 +11,7 @@ import BackgroundImageMusicRecently from '../../components/BackgroundImageMusicR
 import TrackPlayer from 'react-native-track-player';
 import { useNavigation } from '@react-navigation/native';
 import { setSortingEnd } from '../../redux/slices/modalSlice';
+import { setShuffledArray } from '../../redux/slices/audioSlice';
 
 const ListMusicScreen = () => {
     const [isFloatBtnHidden, setBtnHidden] = useState(false);
@@ -24,6 +25,7 @@ const ListMusicScreen = () => {
     const sortBy = useSelector((state) => state.audio.sortBy);
     const sortOrder = useSelector((state) => state.audio.sortOrder);
     const runSortingOrNot = useSelector((state) => state.modal.runSorting);
+    const isMusicControllerShow = useSelector((state) => state.audio.playFirst);
     const dispatch = useDispatch();
 
     const sortedFiles = [...audioFiles].sort((a, b) => {
@@ -73,23 +75,32 @@ const ListMusicScreen = () => {
 
     const updateTrackPlayer = async () => {
         try {
-            const newTrackQueue = sortedFiles.map(file => ({
-                id : file.id,
+            const newTrackQueue = sortedFiles.map((file, index) => ({
+                id: index,
                 url: file.audioUrl,
                 title: file.title,
                 artist: file.artist,
-                album:  file.album,
+                album: file.album,
                 date: new Date(file.addedDate * 1000).toISOString().slice(0, 19).replace('T', ' '),
                 artwork: file.imageUrl,
                 duration: file.duration / 1000,
                 // Add other track details here
             }));
 
-            await TrackPlayer.u
+            await TrackPlayer.reset();
+            
             await TrackPlayer.add(newTrackQueue);
 
+            const shuffleArray = (length) => {
+                const array = Array.from({ length }, (_, index) => index);
+                return array.sort(() => Math.random() - 0.5);
+            };
+
+            const shuffledArray = shuffleArray(newTrackQueue.length);
+
+            dispatch(setShuffledArray(shuffledArray));
             dispatch(setSortingEnd());
-            
+
         } catch (error) {
             console.log('Error updating TrackPlayer:', error);
         }
@@ -156,12 +167,12 @@ const ListMusicScreen = () => {
     const style = StyleSheet.create({
         floatingButton: {
             position: 'absolute',
-            height: 40,
-            width: 40,
+            height: 35,
+            width: 35,
             backgroundColor: 'rgba(60, 19, 97,0.8)',
             borderRadius: 50,
-            bottom: 120,
-            right: 50,
+            bottom: isMusicControllerShow ? 150 : 110,
+            right: 35,
             zIndex: 999,
             opacity: autotophide,
         },
@@ -211,6 +222,7 @@ const ListMusicScreen = () => {
                         </LinearGradient>
                         {/* Tempat List Music */}
                         <View style={{flex: 1, width: '100%', paddingBottom: 150}}>
+                            {/* <NoMusic /> */}
                             <FlatList
                                 scrollEnabled={false}
                                 data={sortedFiles}

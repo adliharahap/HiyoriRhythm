@@ -25,6 +25,13 @@ const App = () => {
     
     try {
       await TrackPlayer.setupPlayer();
+      await TrackPlayer.updateOptions({
+        android: {
+          // This is the default behavior
+          appKilledPlaybackBehavior: AppKilledPlaybackBehavior.ContinuePlayback
+        },
+        capabilities: [Capability.Play, Capability.Pause, Capability.SkipToNext, Capability.SkipToPrevious]
+      });
       
     } catch (e) {
       console.log(" error : ", e);

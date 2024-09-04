@@ -3,13 +3,12 @@ import React, {useEffect, useState} from 'react';
 import { Svg, Path } from 'react-native-svg';
 import TrackPlayer, { useTrackPlayerEvents, Event} from 'react-native-track-player';
 import { convertMillisecondsToMinutes } from '../utils/ConvertMiliSecondToMinutes';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 
 const MusicList = (props) => {
     const {id, img, title, artist, album, duration, path, filedate, filesize} = props;
     const [textcolor, settextcolor] = useState(false);
 
-    const dispatch = useDispatch();
     const sortBy = useSelector((state) => state.audio.sortBy);
 
     const sortLabels = {
@@ -37,6 +36,10 @@ const MusicList = (props) => {
         }
     };
 
+    useEffect(()=> {
+        updateTrackInfo();
+    }, [])
+
     useTrackPlayerEvents([Event.PlaybackTrackChanged], async (event) => {
         // Saat lagu berikutnya diputar, perbarui informasi lagu
         updateTrackInfo();
@@ -45,11 +48,11 @@ const MusicList = (props) => {
     return (
         <View style={{height: 70, width: '100%', flexDirection: "row", marginBottom: 10}}>
             <View style={{width: 70, justifyContent: "center", alignItems: "center"}}>
-                {img === 'content://media/external/audio/albumart/2' ? 
+                {img === 'content://media/external/audio/albumart/1' ? 
                 (
-                    <Image style={{height: 45, width: 45, borderRadius: 5}} source={{uri: img}} />
-                ) : (
                     <Image style={{height: 45, width: 45, borderRadius: 5}} source={require('../assets/images/DefaultMusic.png')} />
+                ) : (
+                    <Image style={{height: 45, width: 45, borderRadius: 5}} source={{uri: img}} />
                 )}
             </View>
             <View style={{flex: 1, justifyContent: "center"}}>

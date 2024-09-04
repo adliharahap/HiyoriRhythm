@@ -1,5 +1,5 @@
 import { View} from 'react-native';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from './screens/HomeScreen';
 import { Svg, Path} from 'react-native-svg';
@@ -10,15 +10,52 @@ import Profiles from './screens/Profiles';
 import { useSelector, useDispatch } from 'react-redux';
 import { hideModal } from '../redux/slices/modalSlice';
 import SortModal from '../components/SortModal';
+import MusicControl, { Command } from 'react-native-music-control';
+import TrackPlayer, { useProgress } from 'react-native-track-player';
+import MusicControllerBottom from '../components/MusicControllerBottom';
 const Tab = createBottomTabNavigator();
 
 const MainScreen = () => {
     const modalVisible = useSelector((state) => state.modal.isVisible);
+    const isPlayingFirst = useSelector((state) => state.audio.playFirst);
     const dispatch = useDispatch();
+    const progress = useProgress();
+
+    useEffect(() => {
+        const updateNotificationPlayback = () => {
+            MusicControl.updatePlayback({
+                elapsedTime: progress.position,
+            });
+        };
+        updateNotificationPlayback();
+    }, [progress.position, progress.duration]);
+
+    useEffect(() => {
+        MusicControl.enableBackgroundMode(true);
+        MusicControl.enableControl('play', true);
+        MusicControl.enableControl('pause', true);
+        MusicControl.enableControl('stop', false);
+        MusicControl.enableControl('nextTrack', true);
+        MusicControl.enableControl('previousTrack', true);
+        MusicControl.enableControl('changePlaybackPosition', true);
+        MusicControl.enableControl('seek', true);
+        MusicControl.enableControl('closeNotification', true, { when: 'always' })
+        MusicControl.handleAudioInterruptions(true);
+
+        // Event handler untuk tombol play di notifikasi
+        MusicControl.on(Command.play, async () => handlePlay());
+        MusicControl.on(Command.pause, async () => handlePause());
+        MusicControl.on(Command.nextTrack, async () => handleNextPress());
+        MusicControl.on(Command.previousTrack, async () => handlePrevPress());
+        MusicControl.on(Command.seek, async(value)=> {await TrackPlayer.seekTo(value)});
+    }, []);
 
     return (
         <>
         <SortModal visible={modalVisible} onClose={() => dispatch(hideModal())} />
+        {isPlayingFirst && (
+            <MusicControllerBottom />
+        )}
         <Tab.Navigator screenOptions={({ route }) => ({
             headerShown: false, 
             tabBarStyle: {

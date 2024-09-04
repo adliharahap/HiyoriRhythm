@@ -14,11 +14,6 @@ const HomeScreen = () => {
     getAudioFiles().then((result) => {
       setAudioFiles(result);
     });
-    const coba = async() => {
-      const getQueue = await TrackPlayer.getQueue();
-      console.log(getQueue);
-    }
-    coba();
   }, []);
 
   return (

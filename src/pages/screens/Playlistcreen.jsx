@@ -1,68 +1,56 @@
-import { View, Text, Button, Alert } from 'react-native'
-import React, { useEffect } from 'react'
-import TrackPlayer, { State } from 'react-native-track-player'
+import { View, Text, SafeAreaView, Image, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import {Svg, Path} from 'react-native-svg';
+import PlaylistChip from '../../components/PlaylistChip';
+import PlaylistArtistALbumList from '../../components/PlaylistArtistALbumList';
 
 const Playlistcreen = () => {
 
-  useEffect(() => {
-    // Initialize TrackPlayer (optional, if you need to set up anything)
-    const setupPlayer = async () => {
-      try {
-        console.log('TrackPlayer setup complete');
-      } catch (error) {
-        console.error('Error setting up TrackPlayer:', error);
-      }
-    };
-
-    setupPlayer();
-  }, []);
-// Setup TrackPlayer and add track
-const playMusic = async () => {
-  try {
-    // Add a track to the queue if it's not already added
-    const track = {
-      id: 1,
-      url: '/storage/emulated/0/Music/Secukupnya - 256.mp3',
-      artist: 'afds',
-      album: 'sdfds',
-      title: 'Zoe Wees Control Lyric Lyrics Video',
-      duration: 229,
-
-    };
-    await TrackPlayer.reset();
-    await TrackPlayer.add(track);
-    console.log('Track added to TrackPlayer');
-
-    // Play the track
-    await TrackPlayer.play();
-    console.log('Play command sent to TrackPlayer');
-
-    // Check current state
-    const state = await TrackPlayer.getState();
-    if (state === TrackPlayer.STATE_PLAYING) {
-      console.log('TrackPlayer is playing');
-    } else {
-      console.log('TrackPlayer is not playing');
-      // Additional info
-      const position = await TrackPlayer.getPosition();
-      const duration = await TrackPlayer.getDuration();
-      const getQueue = await TrackPlayer.getQueue();
-      console.log(`Track position: ${position} / ${duration}`);
-      Alert.alert('TrackPlayer is not playing');
-      console.log('queque : ', getQueue);
-      
-    }
-  } catch (error) {
-    console.error('Error playing track:', error);
-    Alert.alert('Error playing track', error.message);
-  }
+  return (
+    <SafeAreaView style={{backgroundColor: '#0d0d0d',flex: 1}}>
+      <View style={{height: 170, width: '100%'}}>
+        <View style={{flex: 1, width: '100%', flexDirection: 'row',alignItems: 'center'}}>
+          <View style={{paddingHorizontal: 15}}>
+            <Image source={require('../../assets/images/test.jpg')} style={{height: 45, width: 45, borderRadius: 50}} />
+          </View>
+          <View>
+            <Text style={{fontFamily: 'Poppins-Bold', color: '#fdfdfd', fontSize: 18}}>Your Playlist</Text>
+          </View>
+          <View style={{flex: 1, justifyContent: 'flex-end', alignItems: 'center', flexDirection: 'row', paddingRight: 20, gap: 20}}>
+            <View style={{ height: 40, width: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 50,}}>
+                <Svg height="30" viewBox="0 -960 960 960" width="30" fill="#f2f2f2"><Path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></Svg>
+            </View>
+            <View style={{ height: 40, width: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 50}}>
+              <Svg xmlns="http://www.w3.org/2000/svg" height="30" viewBox="0 -960 960 960" width="30" fill="#fdfdfd"><Path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></Svg>
+            </View>
+          </View>
+        </View>
+        <View horizontal={true} style={{height: 40, width: '100%', flexDirection: 'row', paddingHorizontal: 10, marginBottom: 20}}>
+          <ScrollView horizontal={true}>
+            <PlaylistChip title="Playlist" />
+            <PlaylistChip title="Artist" />
+            <PlaylistChip title="Album" />
+          </ScrollView>
+        </View>
+        <View style={{height: 5, width: '100%', backgroundColor: '#000'}}></View>
+      </View>
+      <ScrollView style={{flex: 1, paddingVertical: 10}}>
+        <PlaylistArtistALbumList />
+        <PlaylistArtistALbumList />
+        <PlaylistArtistALbumList />
+        <PlaylistArtistALbumList />
+        <PlaylistArtistALbumList />
+        <PlaylistArtistALbumList />
+        <PlaylistArtistALbumList />
+        <PlaylistArtistALbumList />
+        <PlaylistArtistALbumList />
+        <PlaylistArtistALbumList />
+        <PlaylistArtistALbumList />
+        <PlaylistArtistALbumList />
+        <PlaylistArtistALbumList />
+      </ScrollView>
+    </SafeAreaView>
+  );
 };
 
-return (
-  <View>
-    <Button title="Play/Pause Music" onPress={playMusic} />
-  </View>
-);
-}
-
-export default Playlistcreen
+export default Playlistcreen;
