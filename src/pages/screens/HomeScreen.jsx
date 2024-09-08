@@ -2,30 +2,18 @@ import { View, Text, ScrollView } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { fetchAudioFiles } from 'react-native-audio-files';
 import TrackPlayer, { State } from 'react-native-track-player';
+import AdvancedLyricDisplay from '../../components/AdvancedLyricDisplay';
 
 
 const HomeScreen = () => {
-  const [audioFiles, setAudioFiles] = useState([]);
-
-  useEffect(() => {
-    const getAudioFiles = async () => {
-      return await fetchAudioFiles();
-    };
-    getAudioFiles().then((result) => {
-      setAudioFiles(result);
-    });
-  }, []);
+  const lrcFilePath = 'file:///storage/emulated/0/Download/wea.lrc';
 
   return (
-    <ScrollView style={{backgroundColor: '#000', flex: 1}}>
-      {audioFiles?.map((element, index) => {
-      return (
-        <View key={index}>
-          <Text>{element?.imageUrl}</Text>
+        <View style={{flex: 1, backgroundColor: 'black'}}>
+            <ScrollView style={{flex: 1}}>
+                <AdvancedLyricDisplay lrcFilePath={lrcFilePath} />
+            </ScrollView>
         </View>
-      );
-      })}
-    </ScrollView>
   );
 };
 

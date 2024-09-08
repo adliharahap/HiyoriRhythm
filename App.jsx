@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react';
 import { Provider } from 'react-redux';
 import store from './src/redux/store';
 import MainScreen from './src/pages/MainScreen';
-import PlayMusicScreen from './src/pages/screens/PlayMusicScreen';
+import PlayMusicLyrics from './src/pages/screens/PlayMusicLyrics';
 
 const Stack = createNativeStackNavigator();
 
@@ -49,7 +49,7 @@ const App = () => {
           <Stack.Screen name='AksesBLocked' component={FileAksesBlocked} />
           <Stack.Screen name='InputName' component={NameInputScreen} />
           <Stack.Screen name='MainScreen' component={MainScreen} />
-          <Stack.Screen name='MusicPlay' component={PlayMusicScreen} />
+          <Stack.Screen name='MusicPlay' component={PlayMusicLyrics} />
         </Stack.Navigator>
       </NavigationContainer>
     </Provider>
