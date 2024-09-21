@@ -13,7 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchAudioFiles } from 'react-native-audio-files';
 import { setAudioFiles } from '../redux/slices/audioSlice';
-import { createTables } from '../utils/database_handler/connect_db';
+import { deleteDatabase, setupDatabasePlaylist } from '../utils/PlaylistDatahandler/setupDatabasePlaylist';
 
 const SplashScreenPages = () => {
     const navigation = useNavigation();
@@ -58,7 +58,8 @@ const SplashScreenPages = () => {
                         }
                     };
                     await getAudioFiles();
-                    createTables();
+                    setupDatabasePlaylist();
+                    // deleteDatabase();
                     mappingFinished = true;
 
                     if (mappingFinished) {

@@ -6,6 +6,7 @@ const initialState = {
     artwork: '',
     duration: '',
     album: '',
+    url: '',
 };
 
 const trackSlice = createSlice({
@@ -13,12 +14,13 @@ const trackSlice = createSlice({
     initialState,
     reducers: {
         setCurrentTrack: (state, action) => {
-            const { title, artist, duration, artwork, album } = action.payload;
+            const { title, artist, duration, artwork, album, url} = action.payload;
             state.title = title;
             state.artist = artist;
             state.duration = duration;
             state.artwork = artwork;
             state.album = album;
+            state.url = url;
         },
     },
 });
@@ -30,6 +32,7 @@ export const selectTrackArtwork = (state) => state.track.artwork;
 export const selectTrackDuration = (state) => state.track.duration;
 export const selectTrackAlbum = (state) => state.track.album;
 export const selectCurrentTrack = (state) => state.track;
+export const selectTrackUrl = (state) => state.track.url;
 
 export const { setCurrentTrack } = trackSlice.actions;
 export default trackSlice.reducer;

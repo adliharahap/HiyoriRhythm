@@ -17,10 +17,13 @@ import {
 import MusicControl, { Command } from 'react-native-music-control';
 import { saveImageToAppFolder } from '../../utils/getImagesMusic';
 import { Slider } from '@miblanchard/react-native-slider';
+import FavoriteAndMore from '../../components/FavoriteAndMore';
+import AddSongToPlaylistModal from '../../components/Modals/AddSongToPlaylistModal';
 
 const PlayMusicScreen = () => {
     const [HasSliding, setHasSliding] = useState(false);
     const [position, setPosition] = useState(0);
+    const [visible, setVisible] = useState(false);
 
     const dispatch = useDispatch();
     const progress = useProgress();
@@ -245,6 +248,7 @@ const PlayMusicScreen = () => {
 
     return (
         <>
+        <AddSongToPlaylistModal visible={visible} setVisible={setVisible} />
         <View style={{height: '57%', width: '100%', justifyContent: 'center', alignItems: 'center', paddingTop: 80}}>
             {artwork && artwork !== 'content://media/external/audio/albumart/1' ? (
                 <Image source={{uri: artwork}} style={{height: '80%', width: "75%", borderRadius: 20, resizeMode: 'cover'}}/>
@@ -295,18 +299,7 @@ const PlayMusicScreen = () => {
                 </View>
             </View>
             <View style={{height: 40}}>
-                <View style={{flex: 1, flexDirection: 'row', justifyContent: 'space-between'}}>
-                    <View style={{flex: 1, justifyContent: 'center', alignItems: 'flex-start'}}>
-                        <View style={{marginLeft: 20}}>
-                            <Svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="#FFFFFF"><Path d="M480-160q-33 0-56.5-23.5T400-240q0-33 23.5-56.5T480-320q33 0 56.5 23.5T560-240q0 33-23.5 56.5T480-160Zm0-240q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm0-240q-33 0-56.5-23.5T400-720q0-33 23.5-56.5T480-800q33 0 56.5 23.5T560-720q0 33-23.5 56.5T480-640Z"/></Svg>
-                        </View>
-                    </View>
-                    <View style={{flex: 1, justifyContent: 'center', alignItems: 'flex-end'}}>
-                        <View style={{marginRight: 20}}>
-                            <Svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="#FFFFFF"><Path d="m480-120-58-52q-101-91-167-157T150-447.5Q111-500 95.5-544T80-634q0-94 63-157t157-63q52 0 99 22t81 62q34-40 81-62t99-22q94 0 157 63t63 157q0 46-15.5 90T810-447.5Q771-395 705-329T538-172l-58 52Zm0-108q96-86 158-147.5t98-107q36-45.5 50-81t14-70.5q0-60-40-100t-100-40q-47 0-87 26.5T518-680h-76q-15-41-55-67.5T300-774q-60 0-100 40t-40 100q0 35 14 70.5t50 81q36 45.5 98 107T480-228Zm0-273Z"/></Svg>
-                        </View>
-                    </View>
-                </View>
+                <FavoriteAndMore />
             </View>
             <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 20, }}>
                 <View style={{flex:1, alignItems: 'center', justifyContent: 'center'}}>
@@ -378,9 +371,11 @@ const PlayMusicScreen = () => {
                     </View>
                 </View>
                 <View style={{flex:1, borderColor: 'black', alignItems: 'center', justifyContent: 'center'}}>
-                    <View>
-                        <Svg xmlns="http://www.w3.org/2000/svg" height="30" viewBox="0 -960 960 960" width="30" fill="#F5F5F5"><Path d="M120-320v-80h280v80H120Zm0-160v-80h440v80H120Zm0-160v-80h440v80H120Zm520 480v-160H480v-80h160v-160h80v160h160v80H720v160h-80Z"/></Svg>
-                    </View>
+                    <TouchableOpacity onPress={() => {setVisible(true)}}>
+                        <View>
+                            <Svg xmlns="http://www.w3.org/2000/svg" height="30" viewBox="0 -960 960 960" width="30" fill="#F5F5F5"><Path d="M120-320v-80h280v80H120Zm0-160v-80h440v80H120Zm0-160v-80h440v80H120Zm520 480v-160H480v-80h160v-160h80v160h160v80H720v160h-80Z"/></Svg>
+                        </View>
+                    </TouchableOpacity>
                 </View>
             </View>
         </View>

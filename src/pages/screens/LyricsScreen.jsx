@@ -113,14 +113,14 @@ const LyricsScreen = () => {
                             Lyrics Not Found...
                         </Text>
                         <View style={{ flexDirection: 'row', gap: 20 }}>
-                            <TouchableHighlight onPress={() => importLrcFile(title)}>
+                            <TouchableHighlight underlayColor="rgba(34,34,34,0.6)" onPress={() => importLrcFile(title)}>
                                 <View style={{ backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 5, padding: 13 }}>
                                     <Text style={{ fontFamily: 'Roboto-Regular', fontSize: 12, color: '#fdfdfd' }}>
                                         Import Lrc
                                     </Text>
                                 </View>
                             </TouchableHighlight>
-                            <TouchableHighlight>
+                            <TouchableHighlight underlayColor="rgba(34,34,34,0.6)">
                                 <View style={{ backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 5, padding: 13 }}>
                                     <Text style={{ fontFamily: 'Roboto-Regular', fontSize: 12, color: '#fdfdfd' }}>
                                         Search Online

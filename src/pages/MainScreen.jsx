@@ -9,7 +9,7 @@ import Playlistcreen from './screens/Playlistcreen';
 import Profiles from './screens/Profiles';
 import { useSelector, useDispatch } from 'react-redux';
 import { hideModal } from '../redux/slices/modalSlice';
-import SortModal from '../components/SortModal';
+import SortModal from '../components/Modals/SortModal';
 import MusicControl, { Command } from 'react-native-music-control';
 import TrackPlayer, { useProgress } from 'react-native-track-player';
 import MusicControllerBottom from '../components/MusicControllerBottom';

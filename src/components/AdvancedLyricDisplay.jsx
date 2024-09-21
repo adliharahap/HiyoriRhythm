@@ -38,7 +38,7 @@ const AdvancedLyricDisplay = ({ lrcFilePath }) => {
       }).filter(lyric => lyric !== null);
       dispatch(setLyric(parsedLyrics));
     } catch (err) {
-      console.log('Error reading LRC file:', err);
+      
     }
   }, [lrcFilePath]);
 

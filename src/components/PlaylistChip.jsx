@@ -6,7 +6,7 @@ const PlaylistChip = ({title}) => {
 
     return (
         <TouchableHighlight onPress={()=> setIsActive(!isActive)}>
-            <View style={{height: 40, paddingHorizontal: 30, backgroundColor: isActive? '#582FFF' : 'transparent', justifyContent: 'center', alignItems: 'center', flexDirection: 'row', borderRadius: 50, borderWidth: 1, borderColor: '#cdcdcd', marginHorizontal: 8}}>
+            <View style={{height: 30, paddingHorizontal: 30, backgroundColor: isActive? '#582FFF' : 'transparent', justifyContent: 'center', alignItems: 'center', flexDirection: 'row', borderRadius: 50, borderWidth: 1, borderColor: '#cdcdcd', marginHorizontal: 8}}>
                 <Text style={{fontFamily: 'Roboto-Medium', color: '#fdfdfd'}}>{title}</Text>
             </View>
         </TouchableHighlight>

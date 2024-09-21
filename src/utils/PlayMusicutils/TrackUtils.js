@@ -12,10 +12,11 @@ export const updateTrackInfo = async (dispatch, showNotification) => {
         const trackId = await TrackPlayer.getCurrentTrack();
         const trackObject = await TrackPlayer.getTrack(trackId);
 
-        const { title, artist, duration, artwork, album, size } = trackObject;
+        const { title, artist, duration, artwork, album, size, url } = trackObject;
 
         // Dispatch Redux action to update the current track information
-        dispatch(setCurrentTrack({ title, artist, duration, artwork, album }));
+        dispatch(setCurrentTrack({ title, artist, duration, artwork, album, url }));
+        
         dispatch(setPlayMusicFirstTrue());
         // Show notification with track information
         showNotification(title, artist, duration, artwork, album);

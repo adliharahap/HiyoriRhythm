@@ -1,5 +1,5 @@
-import { View, Text, TouchableWithoutFeedback, Image, TouchableOpacity } from 'react-native'
-import React, { useEffect } from 'react'
+import { View, Text, TouchableWithoutFeedback, Image, TouchableOpacity, Keyboard } from 'react-native'
+import React, { useEffect, useState } from 'react'
 import TextTicker from 'react-native-text-ticker'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Svg, Path } from 'react-native-svg';
@@ -146,8 +146,30 @@ const MusicControllerBottom = () => {
         });
     };
 
+    const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener(
+        'keyboardDidShow',
+        () => {
+            setKeyboardVisible(true); // or some other action
+        }
+        );
+        const keyboardDidHideListener = Keyboard.addListener(
+        'keyboardDidHide',
+        () => {
+            setKeyboardVisible(false); // or some other action
+        }
+        );
+
+        return () => {
+            keyboardDidHideListener.remove();
+            keyboardDidShowListener.remove();
+        };
+    }, []);
+
     return (
-        <View style={{backgroundColor: '#303030', height: 60, width: '100%', position: 'absolute', zIndex: 999, bottom: 70, borderRadius: 10, overflow: 'hidden'}}>
+        <View style={{backgroundColor: '#303030', height: 60, width: '100%', position: 'absolute', zIndex: 999, bottom: isKeyboardVisible ? 0 : 70, borderRadius: 10, overflow: 'hidden'}}>
             <TouchableWithoutFeedback onPress={() => {navigation.navigate('MusicPlay', { MusicId: 999999 })}}>
                 <View style={{flex: 1, flexDirection: 'row'}}>
                     <View style={{width: 50, overflow: 'hidden', justifyContent: 'center', alignItems: 'flex-end'}}>

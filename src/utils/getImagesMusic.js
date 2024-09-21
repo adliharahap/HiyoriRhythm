@@ -18,7 +18,7 @@ export const saveImageToAppFolder = async (contentUri) => {
     console.log('Gambar berhasil disimpan:', filePath);
     return filePath;
   } catch (error) {
-    console.error('Gagal menyimpan gambar:', error);
+    console.log('Gagal menyimpan gambar:', error);
   }
 };
 

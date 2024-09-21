@@ -52,7 +52,7 @@ const MusicList = (props) => {
                 (
                     <Image style={{height: 45, width: 45, borderRadius: 5}} source={require('../assets/images/DefaultMusic.png')} />
                 ) : (
-                    <Image style={{height: 45, width: 45, borderRadius: 5}} source={{uri: img}} />
+                    <Image style={{height: 45, width: 45, borderRadius: 5}} source={{uri: img}} /> || <Image style={{height: 45, width: 45, borderRadius: 5}} source={require('../assets/images/DefaultMusic.png')} />
                 )}
             </View>
             <View style={{flex: 1, justifyContent: "center"}}>
