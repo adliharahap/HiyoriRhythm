@@ -1,10 +1,9 @@
 import { View, Text, TextInput, Button, TouchableHighlight, TouchableOpacity } from 'react-native'
 import React, { useState } from 'react'
 import Modal from 'react-native-modal';
-import { Path, Svg } from 'react-native-svg';
 import { addNewPlaylist, getAllPlaylists } from '../../utils/PlaylistDatahandler/Playlistutils';
 
-const AddNewPlaylistModal = ({modalVisibel, setModalVisibel}) => {
+const AddNewPlaylistModal = ({modalVisibel, setModalVisibel, handleRefresh}) => {
     const [borderfocus, setborderfocus] = useState('#fdfdfd');
     const [NameInputValue, setNameInputValue] = useState('');
 
@@ -14,6 +13,7 @@ const AddNewPlaylistModal = ({modalVisibel, setModalVisibel}) => {
         setTimeout(() => {
             setNameInputValue('');
             setModalVisibel(false);
+            handleRefresh();
         }, 1000);
     }
 

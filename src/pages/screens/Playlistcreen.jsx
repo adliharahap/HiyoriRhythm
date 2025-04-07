@@ -1,22 +1,55 @@
-import { View, Text, SafeAreaView, Image, ScrollView, TouchableOpacity } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import { View, Text, SafeAreaView, Image, ScrollView, TouchableOpacity, FlatList, RefreshControl } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
 import {Svg, Path} from 'react-native-svg';
 import PlaylistChip from '../../components/PlaylistChip';
-import { getAllPlaylists } from '../../utils/PlaylistDatahandler/Playlistutils';
+import { getPlaylistData } from '../../utils/PlaylistDatahandler/Playlistutils';
 import AddNewPlaylistModal from '../../components/Modals/AddNewPlaylistModal';
 import LikedSongList from '../../components/PlaylistList/LikedSongsList';
+import PlaylistList from '../../components/PlaylistList/PlaylistList';
+import ArtistList from '../../components/PlaylistList/ArtistList';
+import { useSelector } from 'react-redux';
+import { selectTrackUrl } from '../../redux/slices/trackSlice';
+import PlaylistComponentList from '../../components/PlaylistList/PlaylistComponentList';
 
 const Playlistcreen = () => {
   const [modalVisibel, setModalVisibel] = useState(false);
+  const [playlistData, setPlaylistData] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [playlistClick, setPlaylistClick] = useState(false);
 
+  const url = useSelector(selectTrackUrl);
+
+
+  // Menggunakan useEffect untuk mendapatkan data saat komponen pertama kali dirender
   useEffect(() => {
-    getAllPlaylists();
-  }, [])
+      getPlaylistData().then((result) => {
+          setPlaylistData(result); // Set playlist data
+      });
+  }, [url, refreshing, playlistClick]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await getPlaylistData().then((result) => {
+        setPlaylistData(result); // Set playlist data
+    });
+    setRefreshing(false);
+}, []);
+
+  const renderPlaylistItem = ({ item }) => (
+    <PlaylistList
+        artwork={item.artwork}
+        playlistTitle={item.name}
+        playlistLength={item.songLength}
+        handleRefresh={handleRefresh}
+        setPlaylistClick={setPlaylistClick}
+    />
+  );
 
   return (
     <>
-    <AddNewPlaylistModal modalVisibel={modalVisibel} setModalVisibel={setModalVisibel} />
+    <AddNewPlaylistModal modalVisibel={modalVisibel} setModalVisibel={setModalVisibel} handleRefresh={handleRefresh} />
     <SafeAreaView style={{backgroundColor: '#0d0d0d',flex: 1}}>
+      {!playlistClick && (<>
       <View style={{height: 150, width: '100%'}}>
         <View style={{flex: 1, width: '100%', flexDirection: 'row',alignItems: 'center'}}>
           <View style={{paddingHorizontal: 15}}>
@@ -45,9 +78,29 @@ const Playlistcreen = () => {
         </View>
         <View style={{height: 5, width: '100%', backgroundColor: '#000'}}></View>
       </View>
-      <ScrollView style={{flex: 1, paddingVertical: 10}}>
-        <LikedSongList />
+      <ScrollView style={{flex: 1, paddingVertical: 10}} refreshControl={
+        <RefreshControl
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+      />
+      }>
+        <View style={{flex: 1, paddingBottom: 150}}>
+          <LikedSongList />
+          <ArtistList />
+          <FlatList
+            scrollEnabled={false}
+            data={playlistData} // Data yang akan di-mapping
+            keyExtractor={(item, index) => index.toString()} // Setiap item harus memiliki key unik
+            renderItem={renderPlaylistItem} // Panggil fungsi render untuk setiap item
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+          />
+        </View>
       </ScrollView>
+      </>)}
+    {playlistClick && (
+      <PlaylistComponentList setPlaylistClick={setPlaylistClick} playlistData={playlistData}/>
+    )}
     </SafeAreaView>
     </>
   );

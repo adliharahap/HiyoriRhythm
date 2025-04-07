@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, Image, Dimensions, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, Image, Dimensions, TouchableOpacity, StatusBar, Platform } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 import { check ,request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Notification from './Notification';
+import { checkManagePermission, requestManagePermission } from 'manage-external-storage';
 
 
 const OnboardingScreen = () => {
@@ -126,24 +127,34 @@ const OnboardingComponent = (props) => {
 
     const checkStoragePermission = async () => {
         try {
-            const readPermissionResult = await check(PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE);
-            const writePermissionResult = await check(PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE);
-        
-            // Set status izin untuk digunakan dalam komponen Anda
-            setStoragePermissionStatus({ read: readPermissionResult, write: writePermissionResult });
-        
-            // Log status izin ke konsol
-            // console.log('Read Permission:', readPermissionResult);
-            // console.log('Write Permission:', writePermissionResult);
-        
-            // Contoh: Jika keduanya diberikan, lakukan sesuatu
-            if (readPermissionResult === 'granted' && writePermissionResult === 'granted') {
-                SetiIfizinFileComplete('#008000');
-                SetIzinBtnUpdateName('Izin Diberikan');
-                return true;
+            if (Platform.OS === 'android') {
+                const sdkVersion = parseInt(Platform.Version, 10); // Mendapatkan versi SDK Android
+                if (sdkVersion >= 30) { // Android 11 (API 30) ke atas
+                    checkManagePermission().then((isManagePermitted) => {
+                        if(isManagePermitted) {
+                            SetiIfizinFileComplete('#008000');
+                            SetIzinBtnUpdateName('Izin Diberikan');
+                        }else {
+                            return false;
+                        }
+                    });
+                } else { // Android 10 (API 29) dan sebelumnya
+                    const readPermissionResult = await check(PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE);
+                    const writePermissionResult = await check(PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE);
+                
+                    // Set status izin untuk digunakan dalam komponen Anda
+                    setStoragePermissionStatus({ read: readPermissionResult, write: writePermissionResult });
+                
+                    // Contoh: Jika keduanya diberikan, lakukan sesuatu
+                    if (readPermissionResult === 'granted' && writePermissionResult === 'granted') {
+                        SetiIfizinFileComplete('#008000');
+                        SetIzinBtnUpdateName('Izin Diberikan');
+                        return true;
 
-            }else if(readPermissionResult === 'denied') {
-                return false;
+                    }else if(readPermissionResult === 'denied') {
+                        return false;
+                    }
+                }
             }
         } catch (error) {
             console.error('Error checking storage permission:', error);
@@ -166,52 +177,76 @@ const OnboardingComponent = (props) => {
         }
     }
 
-    const askfilepermisions = (permissions) => {
-        request(permissions).then(result => {
-            console.log(result);
+    const askfilepermisions = async(permissions) => {
 
-            if (result === RESULTS.GRANTED) {
-                checkStoragePermission();
-                // navigation.replace('Home');
-            }else if(result === RESULTS.DENIED) {
-                console.log("astafirullah");
-            }else if(result === RESULTS.BLOCKED) {
-                console.log("im fine bjir");
-                navigation.replace('AksesBLocked');
+        try {
+            const sdkVersion = parseInt(Platform.Version, 10); // Mendapatkan versi SDK Android
+            if (sdkVersion >= 30) { // Untuk Android 11 (API 30) dan lebih baru
+                // request rights to manage
+                requestManagePermission().then((isManagePermitted) => {
+                    console.log(isManagePermitted);
+                });
+            } else { // Untuk Android 10 (API 29) dan sebelumnya
+                const result = await request(permissions);
+                if (result === RESULTS.GRANTED) {
+                    checkStoragePermission();
+                } else {
+                    console.log("Akses penyimpanan ditolak");
+                }
             }
-        });
+        } catch (error) {
+            console.error('Error requesting permissions:', error);
+        }
     };
 
     const CheckNameandFileAkses = async () => {
         try {
-            const storagePermissionResult = await checkStoragePermission();
-            const userNameResult = await checkUserName();
-        
-            if (storagePermissionResult && userNameResult) {
-                console.log("File akses diizinkan");
-                setNotificationStatus(true);
-                SetNotificationMessage("Selamat! Nama kamu berhasil disimpan, dan akses file telah diizinkan. Kamu siap menjelajahi dunia musik bersama Hiyori Music!");
-                setShowNotification(true);
-                AsyncStorage.setItem('onboardingStatus', 'done');
-            } else {
-                console.log("File akses ditolak");
+            if (Platform.OS === 'android') {
+                const sdkVersion = parseInt(Platform.Version, 10); // Mendapatkan versi SDK Android
+                if (sdkVersion >= 30) { // Android 11 (API 30) ke atas
+                    checkManagePermission().then((isManagePermitted) => {
+                        if(isManagePermitted) {
+                            console.log("File akses diizinkan");
+                            setNotificationStatus(true);
+                            SetNotificationMessage("Selamat! Nama kamu berhasil disimpan, dan akses file telah diizinkan. Kamu siap menjelajahi dunia musik bersama Hiyori Music!");
+                            setShowNotification(true);
+                            AsyncStorage.setItem('onboardingStatus', 'done');
+                        }else {
+                            return false;
+                        }
+                    });
+                } else { // Android 10 (API 29) dan sebelumnya
+                    const storagePermissionResult = await checkStoragePermission();
+                    const userNameResult = await checkUserName();
+                
+                    if (storagePermissionResult && userNameResult) {
+                        console.log("File akses diizinkan");
+                        setNotificationStatus(true);
+                        SetNotificationMessage("Selamat! Nama kamu berhasil disimpan, dan akses file telah diizinkan. Kamu siap menjelajahi dunia musik bersama Hiyori Music!");
+                        setShowNotification(true);
+                        AsyncStorage.setItem('onboardingStatus', 'done');
+                    } else {
+                        console.log("File akses ditolak");
 
-                if(!storagePermissionResult && !userNameResult) {
-                    setNotificationStatus(false);
-                    SetNotificationMessage("Mohon isi nama terlebih dahulu agar kami dapat memberikan pengalaman yang lebih personal. Jangan lupa izinkan aplikasi untuk mengakses file agar kamu bisa menikmati semua fitur Hiyori Music!");
-                    setShowNotification(true);
+                        if(!storagePermissionResult && !userNameResult) {
+                            setNotificationStatus(false);
+                            SetNotificationMessage("Mohon isi nama terlebih dahulu agar kami dapat memberikan pengalaman yang lebih personal. Jangan lupa izinkan aplikasi untuk mengakses file agar kamu bisa menikmati semua fitur Hiyori Music!");
+                            setShowNotification(true);
 
-                }else if(!storagePermissionResult) {
-                    setNotificationStatus(false);
-                    SetNotificationMessage("Tolong izinkan aplikasi untuk mengakses file di perangkat Kamu. Ini penting untuk memberikan pengalaman mendengarkan musik terbaik tanpa hambatan. Terima kasih!");
-                    setShowNotification(true);
+                        }else if(!storagePermissionResult) {
+                            setNotificationStatus(false);
+                            SetNotificationMessage("Tolong izinkan aplikasi untuk mengakses file di perangkat Kamu. Ini penting untuk memberikan pengalaman mendengarkan musik terbaik tanpa hambatan. Terima kasih!");
+                            setShowNotification(true);
 
-                }else if(!userNameResult) {
-                    setNotificationStatus(false);
-                    SetNotificationMessage("Mari lengkapi pengalaman musikmu! Tolong tuliskan nama Kamu agar kami dapat menyajikan layanan yang lebih personal dan menyenangkan. Terima kasih banyak!");
-                    setShowNotification(true);
+                        }else if(!userNameResult) {
+                            setNotificationStatus(false);
+                            SetNotificationMessage("Mari lengkapi pengalaman musikmu! Tolong tuliskan nama Kamu agar kami dapat menyajikan layanan yang lebih personal dan menyenangkan. Terima kasih banyak!");
+                            setShowNotification(true);
+                        }
+                    }
                 }
             }
+            
         } catch (error) {
             console.log('Error checking name and file access:', error);
         }

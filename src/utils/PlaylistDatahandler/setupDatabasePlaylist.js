@@ -15,7 +15,8 @@ export async function setupDatabasePlaylist() {
                 `CREATE TABLE IF NOT EXISTS playlists (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT,
-                    artwork TEXT
+                    artwork TEXT,
+                    description TEXT
                 )`
             );
 

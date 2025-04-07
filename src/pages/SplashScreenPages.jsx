@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,10 +10,11 @@ import Animated, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { check, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { useNavigation } from '@react-navigation/native';
-import { useSelector, useDispatch } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { fetchAudioFiles } from 'react-native-audio-files';
 import { setAudioFiles } from '../redux/slices/audioSlice';
-import { deleteDatabase, setupDatabasePlaylist } from '../utils/PlaylistDatahandler/setupDatabasePlaylist';
+import { setupDatabasePlaylist } from '../utils/PlaylistDatahandler/setupDatabasePlaylist';
+import { checkManagePermission } from 'manage-external-storage';
 
 const SplashScreenPages = () => {
     const navigation = useNavigation();
@@ -40,43 +41,78 @@ const SplashScreenPages = () => {
         const onboardingStatus = await AsyncStorage.getItem('onboardingStatus');
 
         if (onboardingStatus === 'done') {
-            // Onboarding sudah dilakukan, periksa izin dan arahkan ke HomeScreen
-            const readPermission = await check(PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE);
-            const writePermission = await check(PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE);
+            const sdkVersion = parseInt(Platform.Version, 10); // Mendapatkan versi SDK Android
 
-            if (readPermission === RESULTS.GRANTED && writePermission === RESULTS.GRANTED) {
-
-                try {
-                    const getAudioFiles = async () => {
+            if (sdkVersion >= 30) { // Untuk Android 11 (API 30) dan lebih baru
+                checkManagePermission().then(async(isManagePermitted) => {
+                    if(isManagePermitted) {
                         try {
-                            const result = await fetchAudioFiles();
-                            dispatch(setAudioFiles(result));
-                            
+                            const getAudioFiles = async () => {
+                                try {
+                                    const result = await fetchAudioFiles();
+                                    dispatch(setAudioFiles(result));
+                                    
+                                } catch (error) {
+                                    console.log('Error fetching audio files:', error);
+                                    // Tangani kesalahan jika perlu
+                                }
+                            };
+                            await getAudioFiles();
+                            // setupDatabasePlaylist();
+                            // deleteDatabase();
+                            mappingFinished = true;
+    
+                            if (mappingFinished) {
+                                setTimeout(() => {
+                                    navigation.replace('MainScreen');
+                                }, 2000);
+                            }
                         } catch (error) {
-                            console.log('Error fetching audio files:', error);
-                            // Tangani kesalahan jika perlu
+                            console.log(error);
                         }
-                    };
-                    await getAudioFiles();
-                    setupDatabasePlaylist();
-                    // deleteDatabase();
-                    mappingFinished = true;
-
-                    if (mappingFinished) {
-                        setTimeout(() => {
-                            navigation.replace('MainScreen');
-                        }, 2000);
+                    }else {
+                        navigation.replace('AksesDenied');
                     }
-                } catch (error) {
-                    console.log(error);
-                }
-            } else {
-                if(readPermission === RESULTS.DENIED && writePermission === RESULTS.DENIED) {
-                    navigation.replace('AksesDenied');
-                }else if(readPermission === RESULTS.BLOCKED && writePermission === RESULTS.BLOCKED) {
-                    navigation.replace('AksesDenied');
+                });
+            } else { // Untuk Android 10 (API 29) dan sebelumnya
+                const readPermission = await check(PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE);
+                const writePermission = await check(PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE);
+
+                if (readPermission === RESULTS.GRANTED && writePermission === RESULTS.GRANTED) {
+
+                    try {
+                        const getAudioFiles = async () => {
+                            try {
+                                const result = await fetchAudioFiles();
+                                dispatch(setAudioFiles(result));
+                                
+                            } catch (error) {
+                                console.log('Error fetching audio files:', error);
+                                // Tangani kesalahan jika perlu
+                            }
+                        };
+                        await getAudioFiles();
+                        setupDatabasePlaylist();
+                        // deleteDatabase();
+                        mappingFinished = true;
+
+                        if (mappingFinished) {
+                            setTimeout(() => {
+                                navigation.replace('MainScreen');
+                            }, 2000);
+                        }
+                    } catch (error) {
+                        console.log(error);
+                    }
+                } else {
+                    if(readPermission === RESULTS.DENIED && writePermission === RESULTS.DENIED) {
+                        navigation.replace('AksesDenied');
+                    }else if(readPermission === RESULTS.BLOCKED && writePermission === RESULTS.BLOCKED) {
+                        navigation.replace('AksesDenied');
+                    }
                 }
             }
+            
         } else {
             // Onboarding belum dilakukan, arahkan ke OnboardingScreen
             navigation.replace('Onboarding');

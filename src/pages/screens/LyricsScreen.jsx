@@ -6,7 +6,6 @@ import RNFS from 'react-native-fs';
 import { useSelector } from 'react-redux';
 import { selectTrackTitle } from '../../redux/slices/trackSlice';
 import { useProgress } from 'react-native-track-player';
-import LyricDisplay from '../../components/LyricDisplay';
 
 const LyricsScreen = () => {
     const [lyricHas, setIsLyricHas] = useState(false);

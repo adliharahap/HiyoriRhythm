@@ -1,33 +1,19 @@
 import { View, Text, Image, TouchableWithoutFeedback } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import { Svg, Path } from 'react-native-svg';
-import { convertMillisecondsToMinutes } from '../utils/ConvertMiliSecondToMinutes';
-import { useSelector } from 'react-redux';
+import TrackPlayer, { useTrackPlayerEvents, Event} from 'react-native-track-player';
+import { convertMillisecondsToMinutes } from '../../utils/ConvertMiliSecondToMinutes';
 
-const MusicList = (props) => {
+const PlaylistMusicList = (props) => {
     const {id, img, title, artist, album, duration, path, filedate, filesize} = props;
     const [textcolor, settextcolor] = useState(false);
-    const [isValid, setIsValid] = useState(true);
-
-    const sortBy = useSelector((state) => state.audio.sortBy);
-
-    const sortLabels = {
-        size: ` • ${bytesToMB(filesize)} MB`,
-        addedDate: ` • ${new Date(filedate * 1000).toISOString().slice(0, 19).replace('T', ' ')}`,
-    };
-
-    //format bytes to mb
-    function bytesToMB(bytes) {
-        const mb = bytes / (1024 * 1024); // 1 MB = 1024 * 1024 bytes
-        return mb.toFixed(1); // Mengembalikan nilai dengan 2 desimal
-    }
 
     // format duration
     let formatDuration = convertMillisecondsToMinutes(duration);
     const artistNameAvailable = artist === "<unknown>" ? "Unknown Artist" : artist;
 
     const updateTrackInfo = async () => {
-        // let trackIndex = await TrackPlayer.getCurrentTrack();
+        let trackIndex = await TrackPlayer.getCurrentTrack();
         
         if (trackIndex == id) {
             settextcolor(true);
@@ -37,28 +23,29 @@ const MusicList = (props) => {
     };
 
     useEffect(()=> {
-        console.log("music id : ", id, " ", isValid);
+        updateTrackInfo();
+        console.log(img);
     }, [])
 
-
-    // useTrackPlayerEvents([Event.PlaybackTrackChanged], async (event) => {
-    //     // Saat lagu berikutnya diputar, perbarui informasi lagu
-    //     updateTrackInfo();
-    // });
+    useTrackPlayerEvents([Event.PlaybackTrackChanged], async (event) => {
+        // Saat lagu berikutnya diputar, perbarui informasi lagu
+        updateTrackInfo();
+    });
 
     return (
         <View style={{height: 70, width: '100%', flexDirection: "row", marginBottom: 10}}>
             <View style={{width: 70, justifyContent: "center", alignItems: "center"}}>
-                <Image
-                    style={{ height: 45, width: 45, borderRadius: 5 }}
-                    source={isValid ? { uri: img } : require('../assets/images/DefaultMusic.png')}
-                    onError={() => setIsValid(false)}
-                />
+                {img === 'content://media/external/audio/albumart/1' ? 
+                (
+                    <Image style={{height: 45, width: 45, borderRadius: 5}} source={require('../../assets/images/DefaultMusic.png')} />
+                ) : (
+                    <Image style={{height: 45, width: 45, borderRadius: 5}} source={{uri: img}} />
+                )}
             </View>
             <View style={{flex: 1, justifyContent: "center"}}>
                 <Text numberOfLines={1} ellipsizeMode="tail" style={{fontFamily: 'Roboto-Regular', fontSize: 14, color: textcolor ? "#FFFF00" : "#FFFFFF"}}>{title}</Text>
                 <Text numberOfLines={1} ellipsizeMode="tail" style={{fontFamily: 'Roboto-Regular', fontSize: 12, color: '#808080'}}>{artistNameAvailable} • {album}</Text>
-                <Text numberOfLines={1} ellipsizeMode="tail" style={{fontFamily: 'Roboto-Regular', fontSize: 12, color: '#808080'}}>{formatDuration} {sortLabels[sortBy] || ''}</Text>
+                <Text numberOfLines={1} ellipsizeMode="tail" style={{fontFamily: 'Roboto-Regular', fontSize: 12, color: '#808080'}}>{formatDuration}</Text>
             </View>
             <TouchableWithoutFeedback onPress={()=> {console.log(typeof id);}}>
                 <View style={{width: 40, alignItems: "center", justifyContent: "center"}}>
@@ -69,4 +56,4 @@ const MusicList = (props) => {
     );
 };
 
-export default MusicList;
+export default PlaylistMusicList;

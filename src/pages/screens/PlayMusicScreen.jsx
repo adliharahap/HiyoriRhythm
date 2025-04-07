@@ -1,4 +1,4 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, Image, TouchableOpacity, StyleSheet, BackHandler } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import TextTicker from 'react-native-text-ticker';
 import { Svg, Path, G, Rect } from 'react-native-svg';
@@ -7,7 +7,7 @@ import TrackPlayer,{useProgress, useTrackPlayerEvents, Event, RepeatMode, State}
 import { ChangeSelectedOptions } from '../../utils/PlayMusicutils/changeSelectedQueque';
 import { useSelector, useDispatch } from 'react-redux';
 import { setPlayMusic, setSelectedQueQue, setStopPlayMusic} from '../../redux/slices/audioSlice';
-import { useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { updateTrackInfo } from '../../utils/PlayMusicutils/TrackUtils';
 import {
     selectTrackTitle,
@@ -27,6 +27,7 @@ const PlayMusicScreen = () => {
 
     const dispatch = useDispatch();
     const progress = useProgress();
+    const navigation = useNavigation();
     
     // mendapatkan track now playing
     const selectedQueque = useSelector((state) => state.audio.selectedQueQue);
@@ -245,6 +246,19 @@ const PlayMusicScreen = () => {
         });
         updateTrackInfo(dispatch, showNotification);
     };
+
+    useEffect(() => {
+        const backAction = () => {
+            navigation.goBack();
+            return true; // Kembalikan true agar navigasi tidak berjalan
+        };
+    
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    
+        return () => {
+          backHandler.remove(); // Bersihkan listener saat komponen di-unmount
+        };
+    }, []);
 
     return (
         <>
